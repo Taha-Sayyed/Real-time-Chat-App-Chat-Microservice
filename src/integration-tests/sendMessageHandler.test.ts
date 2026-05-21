@@ -356,7 +356,11 @@ describe("POST /message - Integration Tests", () => {
       chatId: chat._id.toString(),
       seenBy: USER_ID_2,
     });
-    expect(messageSeenCalls[0][2].messageIds[0].toString()).toBe(response.body.message._id);
+    expect(
+      (messageSeenCalls[0][2] as { messageIds: string[] })
+        .messageIds[0]
+        .toString()
+    ).toBe(response.body.message._id);
   });
 
   it("should not emit messagesSeen event when receiver is not in chat room", async () => {
