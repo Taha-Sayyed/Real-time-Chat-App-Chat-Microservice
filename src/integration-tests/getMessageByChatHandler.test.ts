@@ -257,7 +257,9 @@ describe("GET /messages/:chatId - Integration Tests", () => {
       chatId: chat._id.toString(),
       seenBy: USER_ID_1,
     });
-    expect(messageSeenCalls[0][2].messageIds).toHaveLength(2);
+    expect(
+      (messageSeenCalls[0][2] as { messageIds: unknown[] }).messageIds
+    ).toHaveLength(2);
   });
 
   it("should not emit messagesSeen event when no unseen messages exist", async () => {
@@ -491,7 +493,9 @@ describe("GET /messages/:chatId - Integration Tests", () => {
     );
 
     expect(messageSeenCalls).toHaveLength(1);
-    expect(messageSeenCalls[0][2].messageIds).toHaveLength(1);
+    expect(
+      (messageSeenCalls[0][2] as { messageIds: unknown[] }).messageIds
+    ).toHaveLength(1);
   });
 
   it("should return messages with all expected properties", async () => {
