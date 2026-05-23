@@ -2,16 +2,15 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, jest } from "@je
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
 import request from "supertest";
-import jwt from "jsonwebtoken";
 import express from "express";
 import isAuth from "../middlewares/auth.js";
 import { getAllChats } from "../controllers/getAllChats.js";
 import { Chat } from "../models/Chat.js";
 import { Messages } from "../models/Messages.js";
+import { TEST_PUBLIC_KEY, generateTestToken, generateInvalidPayloadToken } from "../test-helpers/jwtTestKeys.js";
 
 let mongoServer: MongoMemoryServer;
 const app = express();
-const JWT_SECRET = "test-secret-key";
 
 app.use(express.json());
 
@@ -29,15 +28,11 @@ const mockFetchUser = jest.fn(async (userId: string) => {
 
 app.get("/chat/all", isAuth, getAllChats(Chat, Messages, mockFetchUser));
 
-const generateToken = (userId: string = USER_ID_1) => {
-    return jwt.sign({ user: { _id: userId, name: "Test User", email: "test@example.com" } }, JWT_SECRET);
-};
-
 describe("GET /chat/all - Integration Tests", () => {
     beforeAll(async () => {
         mongoServer = await MongoMemoryServer.create();
         const mongoUri = mongoServer.getUri();
-        process.env.JWT_SECRET = JWT_SECRET;
+        process.env.JWT_PUBLIC_KEY = TEST_PUBLIC_KEY;
         await mongoose.connect(mongoUri);
     });
 
@@ -53,7 +48,7 @@ describe("GET /chat/all - Integration Tests", () => {
     });
 
     it("should return all chats for authenticated user with valid token", async () => {
-        const token = generateToken(USER_ID_1);
+        const token = generateTestToken(USER_ID_1);
 
         await Chat.create({
             users: [USER_ID_1, USER_ID_2],
@@ -75,7 +70,7 @@ describe("GET /chat/all - Integration Tests", () => {
     });
 
     it("should return empty array when user has no chats", async () => {
-        const token = generateToken(USER_ID_1);
+        const token = generateTestToken(USER_ID_1);
 
         const response = await request(app)
             .get("/chat/all")
@@ -86,7 +81,7 @@ describe("GET /chat/all - Integration Tests", () => {
     });
 
     it("should return only chats where authenticated user is a participant", async () => {
-        const token = generateToken(USER_ID_1);
+        const token = generateTestToken(USER_ID_1);
 
         await Chat.create({
             users: [USER_ID_1, USER_ID_2],
@@ -112,7 +107,7 @@ describe("GET /chat/all - Integration Tests", () => {
     });
 
     it("should sort chats by updatedAt in descending order", async () => {
-        const token = generateToken(USER_ID_1);
+        const token = generateTestToken(USER_ID_1);
 
         const chat1 = await Chat.create({
             users: [USER_ID_1, USER_ID_2],
@@ -135,7 +130,7 @@ describe("GET /chat/all - Integration Tests", () => {
     });
 
     it("should include unseen message count in response", async () => {
-        const token = generateToken(USER_ID_1);
+        const token = generateTestToken(USER_ID_1);
 
         const chat = await Chat.create({
             users: [USER_ID_1, USER_ID_2],
@@ -174,7 +169,7 @@ describe("GET /chat/all - Integration Tests", () => {
     });
 
     it("should not count messages sent by the user as unseen", async () => {
-        const token = generateToken(USER_ID_1);
+        const token = generateTestToken(USER_ID_1);
 
         const chat = await Chat.create({
             users: [USER_ID_1, USER_ID_2],
@@ -197,7 +192,7 @@ describe("GET /chat/all - Integration Tests", () => {
     });
 
     it("should include other user data fetched from fetchUser service", async () => {
-        const token = generateToken(USER_ID_1);
+        const token = generateTestToken(USER_ID_1);
 
         await Chat.create({
             users: [USER_ID_1, USER_ID_2],
@@ -217,7 +212,7 @@ describe("GET /chat/all - Integration Tests", () => {
     it("should handle fetchUser service failure gracefully with Unknown User", async () => {
         mockFetchUser.mockRejectedValueOnce(new Error("Service unavailable"));
 
-        const token = generateToken(USER_ID_1);
+        const token = generateTestToken(USER_ID_1);
 
         await Chat.create({
             users: [USER_ID_1, USER_ID_2],
@@ -233,7 +228,7 @@ describe("GET /chat/all - Integration Tests", () => {
     });
 
     it("should include latestMessage in response", async () => {
-        const token = generateToken(USER_ID_1);
+        const token = generateTestToken(USER_ID_1);
 
         const latestMsg = { text: "Latest message", sender: USER_ID_2 };
         await Chat.create({
@@ -250,7 +245,7 @@ describe("GET /chat/all - Integration Tests", () => {
     });
 
     it("should return null for latestMessage when chat has no messages", async () => {
-        const token = generateToken(USER_ID_1);
+        const token = generateTestToken(USER_ID_1);
 
         await Chat.create({
             users: [USER_ID_1, USER_ID_2],
@@ -284,7 +279,7 @@ describe("GET /chat/all - Integration Tests", () => {
     });
 
     it("should return 401 when token does not contain user payload", async () => {
-        const invalidToken = jwt.sign({ noUser: true }, JWT_SECRET);
+        const invalidToken = generateInvalidPayloadToken();
 
         const response = await request(app)
             .get("/chat/all")
@@ -295,7 +290,7 @@ describe("GET /chat/all - Integration Tests", () => {
     });
 
     it("should handle multiple chats with different unseen counts", async () => {
-        const token = generateToken(USER_ID_1);
+        const token = generateTestToken(USER_ID_1);
 
         const chat1 = await Chat.create({
             users: [USER_ID_1, USER_ID_2],
@@ -342,7 +337,7 @@ describe("GET /chat/all - Integration Tests", () => {
     });
 
     it("should return chat object with all expected properties", async () => {
-        const token = generateToken(USER_ID_1);
+        const token = generateTestToken(USER_ID_1);
 
         const chat = await Chat.create({
             users: [USER_ID_1, USER_ID_2],

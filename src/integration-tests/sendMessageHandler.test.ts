@@ -2,17 +2,16 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, jest } from "@je
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
 import request from "supertest";
-import jwt from "jsonwebtoken";
 import express, { Request, Response, NextFunction } from "express";
 import multer from "multer";
 import isAuth from "../middlewares/auth.js";
 import { sendMessage } from "../controllers/sendMessage.js";
 import { Chat } from "../models/Chat.js";
 import { Messages } from "../models/Messages.js";
+import { TEST_PUBLIC_KEY, generateTestToken, generateInvalidPayloadToken } from "../test-helpers/jwtTestKeys.js";
 
 let mongoServer: MongoMemoryServer;
 const app = express();
-const JWT_SECRET = "test-secret-key";
 
 app.use(express.json());
 
@@ -39,18 +38,11 @@ const mockFileMiddleware = (req: Request, res: Response, next: NextFunction) => 
 //@ts-ignore
 app.post("/message", isAuth, upload.single("image"), mockFileMiddleware, sendMessage(Chat, Messages, mockSocketService));
 
-const generateToken = (userId: string = USER_ID_1) => {
-  return jwt.sign(
-    { user: { _id: userId, name: "Test User", email: "test@example.com" } },
-    JWT_SECRET
-  );
-};
-
 describe("POST /message - Integration Tests", () => {
   beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
     const mongoUri = mongoServer.getUri();
-    process.env.JWT_SECRET = JWT_SECRET;
+    process.env.JWT_PUBLIC_KEY = TEST_PUBLIC_KEY;
     await mongoose.connect(mongoUri);
   });
 
@@ -66,7 +58,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should send a text message successfully when user is in chat", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
 
     const chat = await Chat.create({
       users: [USER_ID_1, USER_ID_2],
@@ -92,7 +84,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should save message to database", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
 
     const chat = await Chat.create({
       users: [USER_ID_1, USER_ID_2],
@@ -116,7 +108,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should mark message as seen when receiver is in chat room", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
 
     const chat = await Chat.create({
       users: [USER_ID_1, USER_ID_2],
@@ -141,7 +133,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should not mark message as seen when receiver is not in chat room", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
 
     const chat = await Chat.create({
       users: [USER_ID_1, USER_ID_2],
@@ -162,7 +154,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should send message with image file", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
 
     const chat = await Chat.create({
       users: [USER_ID_1, USER_ID_2],
@@ -183,7 +175,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should update chat's latestMessage when sending text message", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
 
     const chat = await Chat.create({
       users: [USER_ID_1, USER_ID_2],
@@ -207,7 +199,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should update chat's latestMessage to emoji when sending image", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
 
     const chat = await Chat.create({
       users: [USER_ID_1, USER_ID_2],
@@ -227,7 +219,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should return 400 when chatId is missing", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
 
     const response = await request(app)
       .post("/message")
@@ -241,7 +233,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should return 400 when both text and image are missing", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
 
     const chat = await Chat.create({
       users: [USER_ID_1, USER_ID_2],
@@ -259,7 +251,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should return 404 when chat does not exist", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
     const fakeId = new mongoose.Types.ObjectId();
 
     const response = await request(app)
@@ -275,7 +267,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should return 403 when user is not a participant of the chat", async () => {
-    const token = generateToken("otherUser");
+    const token = generateTestToken("otherUser");
 
     const chat = await Chat.create({
       users: [USER_ID_1, USER_ID_2],
@@ -294,7 +286,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should emit socket events to room and users", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
 
     const chat = await Chat.create({
       users: [USER_ID_1, USER_ID_2],
@@ -330,7 +322,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should emit messagesSeen event when receiver is in chat room", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
 
     const chat = await Chat.create({
       users: [USER_ID_1, USER_ID_2],
@@ -364,7 +356,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should not emit messagesSeen event when receiver is not in chat room", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
 
     const chat = await Chat.create({
       users: [USER_ID_1, USER_ID_2],
@@ -420,7 +412,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should return 401 when token does not contain user payload", async () => {
-    const invalidToken = jwt.sign({ noUser: true }, JWT_SECRET);
+    const invalidToken = generateInvalidPayloadToken();
 
     const chat = await Chat.create({
       users: [USER_ID_1, USER_ID_2],
@@ -439,7 +431,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should send message with only image and no text caption", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
 
     const chat = await Chat.create({
       users: [USER_ID_1, USER_ID_2],
@@ -459,7 +451,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should update chat's updatedAt timestamp", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
 
     const chat = await Chat.create({
       users: [USER_ID_1, USER_ID_2],
@@ -484,7 +476,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should create message with correct schema properties", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
 
     const chat = await Chat.create({
       users: [USER_ID_1, USER_ID_2],
@@ -513,7 +505,7 @@ describe("POST /message - Integration Tests", () => {
   });
 
   it("should handle sending multiple messages in same chat", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
 
     const chat = await Chat.create({
       users: [USER_ID_1, USER_ID_2],

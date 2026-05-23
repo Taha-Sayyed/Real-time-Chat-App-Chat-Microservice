@@ -2,15 +2,14 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from "@jest/glo
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
 import request from "supertest";
-import jwt from "jsonwebtoken";
 import express from "express";
 import isAuth from "../middlewares/auth.js";
 import { createNewChat } from "../controllers/createNewChat.js";
 import { Chat } from "../models/Chat.js";
+import { TEST_PUBLIC_KEY, generateTestToken, generateInvalidPayloadToken } from "../test-helpers/jwtTestKeys.js";
 
 let mongoServer: MongoMemoryServer;
 const app = express();
-const JWT_SECRET = "test-secret-key";
 
 app.use(express.json());
 app.post("/chat/new", isAuth, createNewChat(Chat));
@@ -18,15 +17,11 @@ app.post("/chat/new", isAuth, createNewChat(Chat));
 const USER_ID_1 = "user123";
 const USER_ID_2 = "user456";
 
-const generateToken = (userId: string = USER_ID_1) => {
-  return jwt.sign({ user: { _id: userId, name: "Test User", email: "test@example.com" } }, JWT_SECRET);
-};
-
 describe("POST /chat/new - Integration Tests", () => {
   beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
     const mongoUri = mongoServer.getUri();
-    process.env.JWT_SECRET = JWT_SECRET;
+    process.env.JWT_PUBLIC_KEY = TEST_PUBLIC_KEY;
     await mongoose.connect(mongoUri);
   });
 
@@ -40,7 +35,7 @@ describe("POST /chat/new - Integration Tests", () => {
   });
 
   it("should create a new chat successfully when otherUserId is provided and valid token is sent", async () => {
-    const token = generateToken();
+    const token = generateTestToken(USER_ID_1);
 
     const response = await request(app)
       .post("/chat/new")
@@ -60,7 +55,7 @@ describe("POST /chat/new - Integration Tests", () => {
   });
 
   it("should return existing chat when conversation between two users already exists", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
 
     const existingChat = await Chat.create({
       users: [USER_ID_1, USER_ID_2],
@@ -77,7 +72,7 @@ describe("POST /chat/new - Integration Tests", () => {
   });
 
   it("should return 400 when otherUserId is not provided", async () => {
-    const token = generateToken();
+    const token = generateTestToken(USER_ID_1);
 
     const response = await request(app)
       .post("/chat/new")
@@ -98,7 +93,7 @@ describe("POST /chat/new - Integration Tests", () => {
   });
 
   it("should return 401 when Authorization header does not start with Bearer", async () => {
-    const token = generateToken();
+    const token = generateTestToken(USER_ID_1);
 
     const response = await request(app)
       .post("/chat/new")
@@ -120,7 +115,7 @@ describe("POST /chat/new - Integration Tests", () => {
   });
 
   it("should return 401 when token does not contain user payload", async () => {
-    const invalidToken = jwt.sign({ noUser: true }, JWT_SECRET);
+    const invalidToken = generateInvalidPayloadToken();
 
     const response = await request(app)
       .post("/chat/new")
@@ -132,7 +127,7 @@ describe("POST /chat/new - Integration Tests", () => {
   });
 
   it("should create chat with different user IDs in reverse order", async () => {
-    const token = generateToken(USER_ID_2);
+    const token = generateTestToken(USER_ID_2);
 
     const response = await request(app)
       .post("/chat/new")
@@ -148,7 +143,7 @@ describe("POST /chat/new - Integration Tests", () => {
   });
 
   it("should not create duplicate chats even if requested multiple times with same users", async () => {
-    const token = generateToken(USER_ID_1);
+    const token = generateTestToken(USER_ID_1);
 
     const response1 = await request(app)
       .post("/chat/new")
@@ -171,7 +166,7 @@ describe("POST /chat/new - Integration Tests", () => {
   });
 
   it("should set timestamps (createdAt, updatedAt) on new chat creation", async () => {
-    const token = generateToken();
+    const token = generateTestToken(USER_ID_1);
 
     const response = await request(app)
       .post("/chat/new")

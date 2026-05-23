@@ -28,9 +28,18 @@ export const isAuth = async (
 
         const token = authHeader.split(" ")[1];
 
+        let publicKey = process.env.JWT_PUBLIC_KEY as string;
+
+        // If the public key is base64-encoded (without PEM headers), convert it to PEM format
+        if (publicKey && !publicKey.includes("-----BEGIN")) {
+            const keyBuffer = Buffer.from(publicKey, "base64");
+            publicKey = `-----BEGIN PUBLIC KEY-----\n${keyBuffer.toString("base64")}\n-----END PUBLIC KEY-----`;
+        }
+
         const decodedValue = jwt.verify(
             token,
-            process.env.JWT_SECRET as string
+            publicKey,
+            { algorithms: ["RS256"] }
         ) as JwtPayload;
 
         if (!decodedValue || !decodedValue.user) {
