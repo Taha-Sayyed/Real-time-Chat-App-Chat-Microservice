@@ -30,10 +30,10 @@ export const isAuth = async (
 
         let publicKey = process.env.JWT_PUBLIC_KEY as string;
 
-        // If the public key is base64-encoded (without PEM headers), convert it to PEM format
+        // If the public key is base64-encoded, decode it to get the PEM format
         if (publicKey && !publicKey.includes("-----BEGIN")) {
             const keyBuffer = Buffer.from(publicKey, "base64");
-            publicKey = `-----BEGIN PUBLIC KEY-----\n${keyBuffer.toString("base64")}\n-----END PUBLIC KEY-----`;
+            publicKey = keyBuffer.toString("utf-8");
         }
 
         const decodedValue = jwt.verify(
