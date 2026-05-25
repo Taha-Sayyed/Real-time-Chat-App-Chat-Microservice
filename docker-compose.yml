@@ -1,0 +1,24 @@
+services:
+  chat-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: chat-service:dev
+    container_name: chat-service-dev
+    ports:
+      - "5002:5002"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+      # MONGO_URI is read from .env (MongoDB Atlas)
+      # User service reachable via shared Docker network
+      - USER_SERVICE=http://user-service:5000
+    networks:
+      - chat-app-network
+
+# Share the same network as User microservice
+networks:
+  chat-app-network:
+    name: chat-app-network
+    driver: bridge
