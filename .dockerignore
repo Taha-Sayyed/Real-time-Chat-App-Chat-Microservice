@@ -1,0 +1,37 @@
+# Dependencies
+node_modules
+
+# Build output (prevents host's dist from shadowing the built dist)
+dist
+
+# Environment files
+.env
+.env.*
+
+# Git
+.git
+.gitignore
+
+# Logs
+*.log
+logs
+
+# IDE / Editor
+.vscode
+.idea
+*.swp
+*.swo
+
+# Test files (not needed in production image)
+coverage
+integration-tests
+unit-tests
+test-helpers
+jest.config.ts
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
