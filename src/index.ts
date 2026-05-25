@@ -4,12 +4,12 @@ import connectDb from "./config/db.js";
 import chatRoutes from "./routes/chat.js";
 import cors from "cors";
 import { app, server } from "./config/socket.js";
-import dns from "node:dns/promises";
+// import dns from "node:dns/promises";
 
 
-//👇For Development only
-dns.setServers(["1.1.1.1"]);
-//👆For Development only
+// //👇For Development only
+// dns.setServers(["1.1.1.1"]);
+// //👆For Development only
 
 dotenv.config();
 
