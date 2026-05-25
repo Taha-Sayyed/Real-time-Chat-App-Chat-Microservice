@@ -19,6 +19,12 @@ app.use(express.json());
 
 app.use(cors());
 
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    message: "Service is Healthy ✅"
+  });
+});
+
 app.use("/api/v1", chatRoutes);
 
 const port = process.env.PORT;
