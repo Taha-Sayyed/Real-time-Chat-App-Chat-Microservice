@@ -25,13 +25,13 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-app.get("/api/chat/health", (req, res) => {
+app.get("/api/v1/chat/health", (req, res) => {
   res.status(200).json({
     message: "Chat Service is Healthy ✅"
   });
 });
 
-app.use("/api/v1", chatRoutes);
+app.use("/api/v1/chat", chatRoutes);
 
 const port = process.env.PORT;
 
