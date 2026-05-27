@@ -21,13 +21,13 @@ app.use(cors());
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({
-    message: "Service is Healthy ✅"
+    message: "Chat Service is Healthy ✅"
   });
 });
 
 app.get("/api/chat/health", (req, res) => {
   res.status(200).json({
-    message: "Service is Healthy ✅"
+    message: "Chat Service is Healthy ✅"
   });
 });
 
