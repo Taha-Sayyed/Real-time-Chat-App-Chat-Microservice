@@ -86,3 +86,11 @@ docker-compose up --build
 | `userStoppedTyping` | Server → Room | Notify room that typing stopped |
 
 ---
+## Related Repositories
+
+| Repository | Description |
+|------------|-------------|
+| [**Real-time-Chat-App-User-Microservice**](https://github.com/Taha-Sayyed/Real-time-Chat-App-User-Microservice) | Authentication & user management (this repo) |
+| [**Real-time-Chat-App-Chat-Microservice**](https://github.com/Taha-Sayyed/Real-time-Chat-App-Chat-Microservice) | Real-time messaging with Socket.IO |
+| [**Real-time-Chat-App-Mail-Microservice**](https://github.com/Taha-Sayyed/Real-time-Chat-App-Mail-Microservice) | Email notifications via RabbitMQ |
+| [**Real-time-Chat-App-Frontend**](https://github.com/Taha-Sayyed/Real-time-Chat-App-Frontend) | Next.js static frontend |
